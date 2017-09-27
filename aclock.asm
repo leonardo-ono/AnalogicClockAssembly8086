@@ -22,16 +22,16 @@ start:
 		int 16h ; if key pressed, exit
 		jnz exit_process
 
-		call sleep ; wait 1 second
+		call sleep_half_s ; wait 0.5 seconds
 
 		mov cx, 0
 		call draw_pointers ; clear previous pointers
 		
 		jmp .main_loop
 
-sleep:
-		mov cx, 0fh
-		mov dx, 4240h
+sleep_half_s:
+		mov cx, 07h
+		mov dx, 0a120h
 		mov ah, 86h
 		int 15h
 		ret
@@ -75,7 +75,7 @@ update_angles:
 		ret;
 
 ; in:
-;	bx = v24 or v60
+;	bx = v720 or v60
 ;	si = hours, minutes or seconds
 ;	di = angle_h, angle_m or angle_s
 update_angle:
@@ -158,69 +158,47 @@ draw_pointer:
 		popa
 		ret
 
-draw_background:
-	; draw circle
-		mov cx, 720
+; in:
+;	cx = number of steps
+;	bx = angle incrementation
+;   di = angle variable
+;   si = radius
+draw_circle:
+	.next:
+		fld qword [bx]
+		fld qword [di]
+		fadd st1
+		fst qword [di]
+		fist word [data.tmp]
+
+		mov di, data.angle_s
+		;mov si, data.size90
+		call update_pointer
+
+		pusha
+		mov al, 15
+		mov cx, 160
+		add cx, [data.x]
+		mov bx, 100
+		add bx, [data.y]
+		call pset
+		popa
+		
+		loop .next
+		ret
+		
+draw_hours_indications:
+		mov cx, 12
 	.next:
 		push cx
 
-		fld qword [data.vhalf_deg]
-		fld qword [data.angle_s]
-		fadd st1
-		fst qword [data.angle_s]
-		fist word [data.tmp]
-
-		mov di, data.angle_s
-		mov si, data.size90
-		call update_pointer
-
-		mov al, 15
-		mov cx, 160
-		add cx, [data.x]
-		mov bx, 100
-		add bx, [data.y]
-		call pset
-
-		pop cx
-		loop .next
-
-	; draw minutes
-		mov cx, 60
-	.next2:
-		push cx
-
-		fld qword [data.v6deg]
-		fld qword [data.angle_s]
-		fadd st1
-		fst qword [data.angle_s]
-		fist word [data.tmp]
-
-		mov di, data.angle_s
-		mov si, data.size85
-		call update_pointer
-
-		mov al, 15
-		mov cx, 160
-		add cx, [data.x]
-		mov bx, 100
-		add bx, [data.y]
-		call pset
-
-		pop cx
-		loop .next2
-
-	; draw hours
-		mov cx, 12
-	.next3:
-		push cx
-
 		fld qword [data.v30deg]
-		fld qword [data.angle_s]
+		fld qword [data.angle_h]
 		fadd st1
-		fst qword [data.angle_s]
+		fst qword [data.angle_h]
 		fist word [data.tmp]
 
-		mov di, data.angle_s
+		mov di, data.angle_h
 		mov si, data.size85
 		call update_pointer
 
@@ -239,7 +217,7 @@ draw_background:
 		jb .next_dot
 
 		pop cx
-		loop .next3
+		loop .next
 
 		ret
 	; ax = x
@@ -253,6 +231,24 @@ draw_background:
 		mov al, 15
 		call pset
 		popa
+		ret
+		
+draw_background:
+		; draw external circle
+		mov cx, 720
+		mov bx, data.vhalf_deg
+		mov si, data.size90
+		mov di, data.angle_s
+		call draw_circle
+
+		; draw minutes indications
+		mov cx, 60
+		mov bx, data.v6deg
+		mov si, data.size85
+		mov di, data.angle_m
+		call draw_circle
+
+		call draw_hours_indications
 		ret
 
 exit_process:
@@ -296,16 +292,20 @@ data:
 
 		.size90		dq 90.0
 		.size85		dq 85.0
-		.size84		dq 84.0
 		.size80		dq 80.0
 		.size50		dq 50.0
+		
 		.pi2		dq 6.28318
+		
 		.vhalf_deg	dq 0.00872665
 		.v6deg		dq 0.10472
 		.v90deg		dq 1.5708
 		.v30deg		dq 0.523599
+		
 		.v60		dq 60.0
 		.v720		dq 720.0
+		
 		.x 		dw 0
 		.y 		dw 0
+		
 		.tmp		dw 0
