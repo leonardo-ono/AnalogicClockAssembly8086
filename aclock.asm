@@ -1,4 +1,4 @@
-; analogic clock (using 13h graphic mode)
+; analogic clock 8086/87 (using 13h graphic mode)
 ; written by Leonardo Ono (ono.leo@gmail.com)
 ; 26/09/2017
 ; target os: DOS (.COM file extension)
@@ -57,7 +57,7 @@ update_pointer:
 		ret
 
 update_angles:
-		mov bx, data.v24
+		mov bx, data.v720
 		mov si, data.hours
 		mov di, data.angle_h
 		call update_angle
@@ -100,20 +100,25 @@ update_time:
 		; cl = minutes (bcd)
 		; dh = seconds (bcd)
 
-		mov al, ch
+		mov al, dh
 		call convert_byte_bcd_to_bin
 		mov ah, 0
-		mov word [data.hours], ax
+		mov word [data.seconds], ax
 
 		mov al, cl
 		call convert_byte_bcd_to_bin
 		mov ah, 0
 		mov word [data.minutes], ax
 
-		mov al, dh
+		mov al, ch
 		call convert_byte_bcd_to_bin
 		mov ah, 0
-		mov word [data.seconds], ax
+		mov bx, 60
+		xor dx, dx
+		mul bx
+		add ax, [data.minutes]
+		mov word [data.hours], ax ; in number of minutes
+		
 		ret
 
 ; in:
@@ -285,7 +290,7 @@ data:
 		.angle_m	dq 0
 		.angle_h	dq 0
 
-		.hours		dw 0
+		.hours		dw 0 ; in number of minutes
 		.minutes	dw 0
 		.seconds	dw 0
 
@@ -300,8 +305,7 @@ data:
 		.v90deg		dq 1.5708
 		.v30deg		dq 0.523599
 		.v60		dq 60.0
-		.v24		dq 24.0
+		.v720		dq 720.0
 		.x 		dw 0
 		.y 		dw 0
 		.tmp		dw 0
-
