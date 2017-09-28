@@ -44,15 +44,15 @@ update_pointer:
 		fcos
 		fld qword [si]
 		fmul st1
-		fist word [data.x]
-		fist word [data.tmp]
+		fistp word [data.x]
+		ffree st0
 	
 		fld qword [di]
 		fsin
 		fld qword [si]
 		fmul st1
-		fist word [data.y]
-		fist word [data.tmp]
+		fistp word [data.y]
+		ffree st0
 
 		ret
 
@@ -86,10 +86,10 @@ update_angle:
 		fdiv st1
 		fmul st2
 		fsub st3
-		fst qword [di]
-		fist word [data.tmp]
-		fist word [data.tmp]
-		fist word [data.tmp]
+		fstp qword [di]
+		ffree st0
+		ffree st1
+		ffree st2
 		ret
 
 update_time:
@@ -168,8 +168,8 @@ draw_circle:
 		fld qword [bx]
 		fld qword [di]
 		fadd st1
-		fst qword [di]
-		fist word [data.tmp]
+		fstp qword [di]
+		ffree st0
 
 		mov di, data.angle_s
 		;mov si, data.size90
@@ -195,8 +195,8 @@ draw_hours_indications:
 		fld qword [data.v30deg]
 		fld qword [data.angle_h]
 		fadd st1
-		fst qword [data.angle_h]
-		fist word [data.tmp]
+		fstp qword [data.angle_h]
+		ffree st0
 
 		mov di, data.angle_h
 		mov si, data.size85
@@ -305,7 +305,7 @@ data:
 		.v60		dq 60.0
 		.v720		dq 720.0
 		
-		.x 		dw 0
-		.y 		dw 0
+		.x 			dw 0
+		.y 			dw 0
 		
 		.tmp		dw 0
